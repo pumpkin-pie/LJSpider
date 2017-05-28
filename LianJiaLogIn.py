@@ -4,7 +4,7 @@
 @site: http://lanbing510.info
 """
 
-##import urllib
+import urllib
 ##import urllib2
 import urllib.request  as urllib2
 import json
@@ -20,6 +20,8 @@ cookie = cookielib.CookieJar()
 opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie))
 #安装opener,此后调用urlopen()时都会使用安装过的opener对象
 urllib2.install_opener(opener)
+
+opener = urllib2.build_opener(urllib2.HTTPHandler(debuglevel=1))
 
 
 home_url = 'http://bj.lianjia.com/'
@@ -50,22 +52,25 @@ result = opener.open(req)
 
 # 获取cookie和lt值
 pattern = re.compile(r'JSESSIONID=(.*)')
-jsessionid = pattern.findall(result.info().getheader('Set-Cookie').split(';')[0])[0]
+jsessionid = pattern.findall(result.info()['Set-Cookie'].split(';')[0])[0]
+
+print(jsessionid)
 
 html_content = result.read()
-gzipped = result.info().getheader('Content-Encoding')
+gzipped = result.info()['Content-Encoding']
 if gzipped:
     html_content = zlib.decompress(html_content, 16+zlib.MAX_WBITS)
+    html_content_str = str(html_content,encoding='utf-8')
 pattern = re.compile(r'value=\"(LT-.*)\"')
-lt = pattern.findall(html_content)[0]
+lt = pattern.findall(html_content_str)[0]
 pattern = re.compile(r'name="execution" value="(.*)"')
-execution = pattern.findall(html_content)[0]
+execution = pattern.findall(html_content_str)[0]
  
 
 # data
 data = {
-    'username': 'your username', #替换为自己账户的用户名
-    'password': 'your password', #替换为自己账户的密码
+    'username': '18612596604', #替换为自己账户的用户名
+    'password': 'qiaoshuang198983', #替换为自己账户的密码
     'execution': execution,
     '_eventId': 'submit',
     'lt': lt,
@@ -74,7 +79,7 @@ data = {
 }
 
 # urllib进行编码
-post_data=urllib.urlencode(data)
+post_data=urllib.parse.urlencode(data)
 
 
 headers = {
@@ -94,7 +99,7 @@ headers = {
 }
  
 
-req = urllib2.Request(auth_url, post_data, headers)
+req = urllib2.Request(auth_url, byte(post_data), headers)
 
 
 try:
