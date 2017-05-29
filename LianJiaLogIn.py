@@ -54,7 +54,7 @@ result = opener.open(req)
 pattern = re.compile(r'JSESSIONID=(.*)')
 jsessionid = pattern.findall(result.info()['Set-Cookie'].split(';')[0])[0]
 
-print(jsessionid)
+##print(jsessionid)
 
 html_content = result.read()
 gzipped = result.info()['Content-Encoding']
@@ -99,7 +99,7 @@ headers = {
 }
  
 
-req = urllib2.Request(auth_url, byte(post_data), headers)
+req = urllib2.Request(auth_url, bytes(post_data,encoding='gbk'), headers)
 
 
 try:
