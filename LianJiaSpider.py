@@ -5,13 +5,18 @@
 """
 
 import re
-import urllib.request  
+import urllib 
+#import urllib.request  as urllib2
+from  urllib.request import  Request,urlopen
+from  urllib.error   import  URLError,HTTPError
 import sqlite3
 import random
 import threading
 from bs4 import BeautifulSoup
 
-import sys
+import codecs
+
+import sys,os,io
 from imp import reload  # py3 feature
 reload(sys)
 
@@ -39,7 +44,8 @@ hds=[{'User-Agent':'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) 
     
 
 #北京区域列表
-regions=[u"东城",u"西城",u"朝阳",u"海淀",u"丰台",u"石景山","通州",u"昌平",u"大兴",u"亦庄开发区",u"顺义",u"房山",u"门头沟",u"平谷",u"怀柔",u"密云",u"延庆",u"燕郊"]
+#regions=[u"东城",u"西城",u"朝阳",u"海淀",u"丰台",u"石景山","通州",u"昌平",u"大兴",u"亦庄开发区",u"顺义",u"房山",u"门头沟",u"平谷",u"怀柔",u"密云",u"延庆",u"燕郊"]
+regions=[u"东城"]
 
 
 lock = threading.Lock()
@@ -144,22 +150,35 @@ def xiaoqu_spider(db_xq,url_page=u"http://bj.lianjia.com/xiaoqu/pg1rs%E6%98%8C%E
     爬取页面链接中的小区信息
     """
     try:
-        req = urllib2.Request(url_page,headers=hds[random.randint(0,len(hds)-1)])
-        source_code = urllib2.urlopen(req,timeout=10).read()
-        plain_text=unicode(source_code)#,errors='ignore')   
-        soup = BeautifulSoup(plain_text)
-    except (urllib2.HTTPError, urllib2.URLError) as e:
+        req = Request(url_page,headers=hds[random.randint(0,len(hds)-1)])
+        source_code = urlopen(req,timeout=10).read()
+        #source_code_str = str(source_code,encoding='utf-8')
+        source_code_str = str(source_code,encoding='utf-8')
+        plain_text=source_code_str   
+        #plain_text=unicode(source_code)#,errors='ignore')   
+        soup = BeautifulSoup(plain_text,"html.parser",from_encoding='utf-8')
+    except (HTTPError, URLError) as e:
         print (e)
         exit(-1)
     except Exception as e:
         print (e)
         exit(-1)
     
-    xiaoqu_list=soup.findAll('div',{'class':'info-panel'})
+    #print(type(soup))
+    #soup=(soup.encode('utf-8'))
+    print(type(soup.a))
+    #print((soup.div))
+    print(soup.find_all('a'))
+    #xiaoqu_list=soup.findAll('div',{'class':'info-panel'})
+    xiaoqu_list=soup.find_all('div',{'class':'info'})
+    print("^^^^^^^^^^^^^^^")
+    print(xiaoqu_list)
+    print("##############")
     for xq in xiaoqu_list:
         info_dict={}
         info_dict.update({u'小区名称':xq.find('a').text})
         content=unicode(xq.find('div',{'class':'con'}).renderContents().strip())
+        #content=(xq.find('div',{'class':'con'}).renderContents().strip()
         info=re.match(r".+>(.+)</a>.+>(.+)</a>.+</span>(.+)<span>.+</span>(.+)",content)
         if info:
             info=info.groups()
@@ -170,36 +189,60 @@ def xiaoqu_spider(db_xq,url_page=u"http://bj.lianjia.com/xiaoqu/pg1rs%E6%98%8C%E
         command=gen_xiaoqu_insert_command(info_dict)
         db_xq.execute(command,1)
 
+
+def m_str2dict(str_in):
+    """
+    exec() in py3 weird,and don't execute!!
+    format : d={'idx1':22,'idx2':34}
+    """
+    pattern = re.compile(r'd={\"(\w*)\":(\d*),\"(\w*)\":(\d*)}')
+    res = pattern.findall(str_in)
+    #if len(res[0]) == 4:
+    #dict_out[res[0][0]] = res[0][1]
+    #dict_out[res[0][2]] = res[0][3]
+    return {res[0][0]:int(res[0][1]),res[0][2]:int(res[0][3])}
+
+
     
 def do_xiaoqu_spider(db_xq,region=u"昌平"):
     """
     爬取大区域中的所有小区信息
     """
-    url=u"http://bj.lianjia.com/xiaoqu/rs"+region+"/"
+    d=""
+    url=u"http://bj.lianjia.com/xiaoqu/rs"+urllib.parse.quote(region)+"/"
     try:
-        req = urllib2.Request(url,headers=hds[random.randint(0,len(hds)-1)])
-        source_code = urllib2.urlopen(req,timeout=5).read()
-        plain_text=unicode(source_code)#,errors='ignore')   
-        soup = BeautifulSoup(plain_text)
-    except (urllib2.HTTPError, urllib2.URLError) as e:
+        req = Request(url,headers=hds[random.randint(0,len(hds)-1)])
+        source_code = urlopen(req,timeout=5).read()
+        #plain_text=unicode(source_code)#,errors='ignore')
+        source_code_str = str(source_code,encoding='utf-8')
+        plain_text=source_code_str   
+        #soup = BeautifulSoup(plain_text)
+        soup = BeautifulSoup(plain_text,"html.parser",from_encoding='utf-8')
+    except (HTTPError, URLError) as e:
         print (e)
         return
     except Exception as e:
         print (e)
         return
-    d="d="+soup.find('div',{'class':'page-box house-lst-page-box'}).get('page-data')
-    exec(d)
+    exec_str='d='+soup.find('div',{'class':'page-box house-lst-page-box'}).get('page-data')
+    #print(exec_str)
+    #exec(exec_str)
+    d=m_str2dict(exec_str)
     total_pages=d['totalPage']
     
     threads=[]
-    for i in range(total_pages):
-        url_page=u"http://bj.lianjia.com/xiaoqu/pg%drs%s/" % (i+1,region)
-        t=threading.Thread(target=xiaoqu_spider,args=(db_xq,url_page))
-        threads.append(t)
-    for t in threads:
-        t.start()
-    for t in threads:
-        t.join()
+    ##for i in range(total_pages):
+    for i in range(2):
+        url_page=u"http://bj.lianjia.com/xiaoqu/pg%drs%s/" % (i+1,urllib.parse.quote(region))
+        #print(url_page)
+    #    t=threading.Thread(target=xiaoqu_spider,args=(db_xq,url_page))
+    #    threads.append(t)
+    #for t in threads:
+    #    t.start()
+    #for t in threads:
+    #    t.join()
+    
+        xiaoqu_spider(db_xq,url_page)
     print (u"爬下了 %s 区全部的小区信息" % region)
 
 
@@ -208,11 +251,11 @@ def chengjiao_spider(db_cj,url_page=u"http://bj.lianjia.com/chengjiao/pg1rs%E5%8
     爬取页面链接中的成交记录
     """
     try:
-        req = urllib2.Request(url_page,headers=hds[random.randint(0,len(hds)-1)])
-        source_code = urllib2.urlopen(req,timeout=10).read()
+        req = Request(url_page,headers=hds[random.randint(0,len(hds)-1)])
+        source_code = urlopen(req,timeout=10).read()
         plain_text=unicode(source_code)#,errors='ignore')   
         soup = BeautifulSoup(plain_text)
-    except (urllib2.HTTPError, urllib2.URLError) as e:
+    except (HTTPError, URLError) as e:
         print (e)
         exception_write('chengjiao_spider',url_page)
         return
@@ -264,13 +307,13 @@ def xiaoqu_chengjiao_spider(db_cj,xq_name=u"冠庭园"):
     """
     爬取小区成交记录
     """
-    url=u"http://bj.lianjia.com/chengjiao/rs"+urllib2.quote(xq_name)+"/"
+    url=u"http://bj.lianjia.com/chengjiao/rs"+urllib.quote(xq_name)+"/"
     try:
-        req = urllib2.Request(url,headers=hds[random.randint(0,len(hds)-1)])
-        source_code = urllib2.urlopen(req,timeout=10).read()
+        req = Request(url,headers=hds[random.randint(0,len(hds)-1)])
+        source_code = urlopen(req,timeout=10).read()
         plain_text=unicode(source_code)#,errors='ignore')   
         soup = BeautifulSoup(plain_text)
-    except (urllib2.HTTPError, urllib2.URLError) as e:
+    except (HTTPError, URLError) as e:
         print (e)
         exception_write('xiaoqu_chengjiao_spider',xq_name)
         return
@@ -287,7 +330,7 @@ def xiaoqu_chengjiao_spider(db_cj,xq_name=u"冠庭园"):
     
     threads=[]
     for i in range(total_pages):
-        url_page=u"http://bj.lianjia.com/chengjiao/pg%drs%s/" % (i+1,urllib2.quote(xq_name))
+        url_page=u"http://bj.lianjia.com/chengjiao/pg%drs%s/" % (i+1,urllib.quote(xq_name))
         t=threading.Thread(target=chengjiao_spider,args=(db_cj,url_page))
         threads.append(t)
     for t in threads:
@@ -314,7 +357,8 @@ def exception_write(fun_name,url):
     写入异常信息到日志
     """
     lock.acquire()
-    f = open('log.txt','a')
+    ##f = open('log.txt','a')
+    f = codecs.open('log.txt','a',encoding="utf-8")
     line="%s %s\n" % (fun_name,url)
     f.write(line)
     f.close()
@@ -326,13 +370,17 @@ def exception_read():
     从日志中读取异常信息
     """
     lock.acquire()
-    f=open('log.txt','r')
-    lines=f.readlines()
-    f.close()
-    f=open('log.txt','w')
-    f.truncate()
-    f.close()
-    lock.release()
+    file_path=os.getcwd()+r'\log.txt'
+    lines=[]
+    #print(file_path)
+    if os.path.exists(file_path):
+        f=codecs.open("log.txt",'r',encoding="utf-8")
+        lines=f.readlines()
+        f.close()
+        f=codecs.open("log.txt",'w',encoding="utf-8")
+        f.truncate()
+        f.close()
+        lock.release()
     return lines
 
 
