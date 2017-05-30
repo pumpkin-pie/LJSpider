@@ -99,7 +99,7 @@ headers = {
 }
  
 
-req = urllib2.Request(auth_url, bytes(post_data,encoding='gbk'), headers)
+req = urllib2.Request(auth_url, bytes(post_data,encoding='utf-8'), headers)
 
 
 try:
