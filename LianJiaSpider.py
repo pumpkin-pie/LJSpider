@@ -172,7 +172,7 @@ def xiaoqu_spider(db_xq,url_page=u"http://bj.lianjia.com/xiaoqu/pg1rs%E6%98%8C%E
     #xiaoqu_list=soup.findAll('div',{'class':'info-panel'})
     xiaoqu_list=soup.find_all('div',{'class':'info'})
     print("^^^^^^^^^^^^^^^")
-    print(xiaoqu_list)
+    print(xiaoqu_list[0])
     print("##############")
     for xq in xiaoqu_list:
         info_dict={}
