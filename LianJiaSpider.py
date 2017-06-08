@@ -176,6 +176,10 @@ def xiaoqu_spider(db_xq,url_page=u"http://bj.lianjia.com/xiaoqu/pg1rs%E6%98%8C%E
     print("##############")
     for xq in xiaoqu_list:
         info_dict={}
+        print("NANANANANNANANAANANANNANANANANANNA")
+        print(xq.find('a').text)
+        print(xq.find_all('a'))
+        print("MEMEMEMEMEMEMMEMEMEMEMEMEMEMMEMEEM")
         info_dict.update({u'小区名称':xq.find('a').text})
         #content=unicode(xq.find('div',{'class':'con'}).renderContents().strip())
         print("11111111111111111111111")
@@ -189,7 +193,13 @@ def xiaoqu_spider(db_xq,url_page=u"http://bj.lianjia.com/xiaoqu/pg1rs%E6%98%8C%E
         print("55555555555555555555555")
         print(xq.find('div',{'class':'positionInfo'}).renderContents().strip().decode('utf-8'))
         content=(xq.find('div',{'class':'positionInfo'}).renderContents().strip().decode('utf-8'))
-        info=re.match(r".+>(.+)</a>.+>(.+)</a>.+</span>(.+)<span>.+</span>(.+)",content)
+        #info=re.match(r".+>(.+)</a>.+>(.+)</a>.+</span>(.+)<span>.+</span>(.+)",content)
+        #info = re.match(r".+>(.+)</a>.+>(.+)</a>.+/(.+).+;(.+)</div>", content)
+        info = re.match(r".+>(.+)</a>.+>(.+)</a>", content)
+        print("8888888888888888888888")
+        print(content.replace('\n',''))
+        tmp = re.match(r".+>(.+)</a>.+>(.+)</a>\s+(\S+)\s+/\s*(.+)$", content.replace('\n',''))
+        print(tmp.groups())
         print("99999999999999999999999")
         print(info)
         if info:
