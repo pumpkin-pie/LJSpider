@@ -5,7 +5,8 @@
 """
 
 import re
-import urllib 
+import urllib
+from urllib import parse
 #import urllib.request  as urllib2
 from  urllib.request import  Request,urlopen
 from  urllib.error   import  URLError,HTTPError
@@ -209,6 +210,8 @@ def xiaoqu_spider(db_xq,url_page=u"http://bj.lianjia.com/xiaoqu/pg1rs%E6%98%8C%E
             info_dict.update({u'小区户型':info[2]})
             info_dict.update({u'建造时间':info[3][:4]})
         command=gen_xiaoqu_insert_command(info_dict)
+        #print("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT")
+        #print(command)
         db_xq.execute(command,1)
 
 
@@ -231,7 +234,8 @@ def do_xiaoqu_spider(db_xq,region=u"昌平"):
     爬取大区域中的所有小区信息
     """
     d=""
-    url=u"http://bj.lianjia.com/xiaoqu/rs"+urllib.parse.quote(region)+"/"
+    url=u"http://bj.lianjia.com/xiaoqu/rs"+parse.quote(region)+"/"
+    print(url)
     try:
         req = Request(url,headers=hds[random.randint(0,len(hds)-1)])
         source_code = urlopen(req,timeout=5).read()
@@ -255,7 +259,7 @@ def do_xiaoqu_spider(db_xq,region=u"昌平"):
     threads=[]
     ##for i in range(total_pages):
     for i in range(2):
-        url_page=u"http://bj.lianjia.com/xiaoqu/pg%drs%s/" % (i+1,urllib.parse.quote(region))
+        url_page=u"http://bj.lianjia.com/xiaoqu/pg%drs%s/" % (i+1,parse.quote(region))
         #print(url_page)
     #    t=threading.Thread(target=xiaoqu_spider,args=(db_xq,url_page))
     #    threads.append(t)
@@ -329,7 +333,7 @@ def xiaoqu_chengjiao_spider(db_cj,xq_name=u"冠庭园"):
     """
     爬取小区成交记录
     """
-    url=u"http://bj.lianjia.com/chengjiao/rs"+urllib.quote(xq_name)+"/"
+    url=u"http://bj.lianjia.com/chengjiao/rs"+parse.quote(xq_name)+"/"
     try:
         req = Request(url,headers=hds[random.randint(0,len(hds)-1)])
         source_code = urlopen(req,timeout=10).read()
