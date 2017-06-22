@@ -89,16 +89,21 @@ class SQLiteWraper(object):
         cu = conn.cursor()
         try:
             if not method_flag:
+                #print("FFFFFFFFFFFFFFFFFFFFFFFF")
                 cu.execute(command)
             else:
+                #print("GGGGGGGGGGGGGGGGGGGGGGGG")
+                #print(command[0],command[1])
                 cu.execute(command[0],command[1])
             conn.commit()
         except sqlite3.IntegrityError as e:
-            #print (e)
+            #print ("EEEEEEEEEEEEEEEEEEE")
+            print(e)
             return -1
         except Exception as e:
             print (e)
             return -2
+        #print("EXECUTE DONE")
         return 0
     
     @conn_trans
@@ -123,6 +128,8 @@ def gen_xiaoqu_insert_command(info_dict):
     for il in info_list:
         if il in info_dict:
             t.append(info_dict[il])
+            #print("AAAAAAAAAAAAAAAAAAAA")
+            #print(il,info_dict[il])
         else:
             t.append('')
     t=tuple(t)
@@ -167,42 +174,42 @@ def xiaoqu_spider(db_xq,url_page=u"http://bj.lianjia.com/xiaoqu/pg1rs%E6%98%8C%E
     
     #print(type(soup))
     #soup=(soup.encode('utf-8'))
-    print(type(soup.a))
+    #print(type(soup.a))
     #print((soup.div))
-    print(soup.find_all('a'))
+    #print(soup.find_all('a'))
     #xiaoqu_list=soup.findAll('div',{'class':'info-panel'})
     xiaoqu_list=soup.find_all('div',{'class':'info'})
-    print("^^^^^^^^^^^^^^^")
-    print(xiaoqu_list[0])
-    print("##############")
+    #print("^^^^^^^^^^^^^^^")
+    #print(xiaoqu_list[0])
+    #print("##############")
     for xq in xiaoqu_list:
         info_dict={}
-        print("NANANANANNANANAANANANNANANANANANNA")
-        print(xq.find('a').text)
-        print(xq.find_all('a'))
-        print("MEMEMEMEMEMEMMEMEMEMEMEMEMEMMEMEEM")
+        #print("NANANANANNANANAANANANNANANANANANNA")
+        #print(xq.find('a').text)
+        #print(xq.find_all('a'))
+        #print("MEMEMEMEMEMEMMEMEMEMEMEMEMEMMEMEEM")
         info_dict.update({u'小区名称':xq.find('a').text})
         #content=unicode(xq.find('div',{'class':'con'}).renderContents().strip())
-        print("11111111111111111111111")
-        print(xq)
-        print("22222222222222222222222")
-        print(xq.find('div',{'class':'positionInfo'}))
-        print("33333333333333333333333")
-        print(xq.find('div',{'class':'positionInfo'}).renderContents())
-        print("44444444444444444444444")
-        print(xq.find('div',{'class':'positionInfo'}).renderContents().strip())
-        print("55555555555555555555555")
-        print(xq.find('div',{'class':'positionInfo'}).renderContents().strip().decode('utf-8'))
+        #print("11111111111111111111111")
+        #print(xq)
+        #print("22222222222222222222222")
+        #print(xq.find('div',{'class':'positionInfo'}))
+        #print("33333333333333333333333")
+        #print(xq.find('div',{'class':'positionInfo'}).renderContents())
+        #print("44444444444444444444444")
+        #print(xq.find('div',{'class':'positionInfo'}).renderContents().strip())
+        #print("55555555555555555555555")
+        #print(xq.find('div',{'class':'positionInfo'}).renderContents().strip().decode('utf-8'))
         content=(xq.find('div',{'class':'positionInfo'}).renderContents().strip().decode('utf-8'))
         #info=re.match(r".+>(.+)</a>.+>(.+)</a>.+</span>(.+)<span>.+</span>(.+)",content)
         #info = re.match(r".+>(.+)</a>.+>(.+)</a>.+/(.+).+;(.+)</div>", content)
-        info = re.match(r".+>(.+)</a>.+>(.+)</a>", content)
-        print("8888888888888888888888")
-        print(content.replace('\n',''))
-        tmp = re.match(r".+>(.+)</a>.+>(.+)</a>\s+(\S+)\s+/\s*(.+)$", content.replace('\n',''))
-        print(tmp.groups())
-        print("99999999999999999999999")
-        print(info)
+        ##info = re.match(r".+>(.+)</a>.+>(.+)</a>", content)
+        #print("8888888888888888888888")
+        #print(content.replace('\n',''))
+        info = re.match(r".+>(.+)</a>.+>(.+)</a>\s+(\S+)\s+/\s*(.+)$", content.replace('\n',''))
+        #print(info.groups())
+        #print("99999999999999999999999")
+        #print(info.groups())
         if info:
             info=info.groups()
             info_dict.update({u'大区域':info[0]})
@@ -211,6 +218,7 @@ def xiaoqu_spider(db_xq,url_page=u"http://bj.lianjia.com/xiaoqu/pg1rs%E6%98%8C%E
             info_dict.update({u'建造时间':info[3][:4]})
         command=gen_xiaoqu_insert_command(info_dict)
         #print("TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT")
+        #print(info_dict)
         #print(command)
         db_xq.execute(command,1)
 
@@ -235,7 +243,6 @@ def do_xiaoqu_spider(db_xq,region=u"昌平"):
     """
     d=""
     url=u"http://bj.lianjia.com/xiaoqu/rs"+parse.quote(region)+"/"
-    print(url)
     try:
         req = Request(url,headers=hds[random.randint(0,len(hds)-1)])
         source_code = urlopen(req,timeout=5).read()
@@ -258,7 +265,7 @@ def do_xiaoqu_spider(db_xq,region=u"昌平"):
     
     threads=[]
     ##for i in range(total_pages):
-    for i in range(2):
+    for i in range(1):
         url_page=u"http://bj.lianjia.com/xiaoqu/pg%drs%s/" % (i+1,parse.quote(region))
         #print(url_page)
     #    t=threading.Thread(target=xiaoqu_spider,args=(db_xq,url_page))
@@ -334,6 +341,7 @@ def xiaoqu_chengjiao_spider(db_cj,xq_name=u"冠庭园"):
     爬取小区成交记录
     """
     url=u"http://bj.lianjia.com/chengjiao/rs"+parse.quote(xq_name)+"/"
+    print(url)
     try:
         req = Request(url,headers=hds[random.randint(0,len(hds)-1)])
         source_code = urlopen(req,timeout=10).read()
@@ -451,5 +459,5 @@ if __name__=="__main__":
     do_xiaoqu_chengjiao_spider(db_xq,db_cj)
     
     #重新爬取爬取异常的链接
-    exception_spider(db_cj)
+    ##exception_spider(db_cj)
 
